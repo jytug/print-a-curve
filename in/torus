@@ -1,0 +1,9 @@
+u v
+(10 + cos(u)) * cos(v)
+(10 + cos(u)) * sin(v)
+sin(u)
+0
+2 * pi
+0
+2 * pi
+torus.stl

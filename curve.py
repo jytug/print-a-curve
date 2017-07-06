@@ -1,58 +1,65 @@
 import numpy as np
+from sympy import lambdify, symbols, sympify
 
-from triangle import *
-
-# returns a set of 3d triangles, interpolated on a
+# returns a list of faces and vertices, interpolated on a
 # square [umin, umax] x [vmin, vmax] in unum * vnum points
-def lambda_to_mesh(f1, f2, f3, orient, umin, umax, vmin, vmax,
-                   unum=500, vnum=500):
-    res = []
+def lambda_to_mesh(f1, f2, f3, umin, umax, vmin, vmax,
+                   unum=50, vnum=50):
+    vertices = []
+    repeated_vertices = {}
+    vertex_index = np.zeros([vnum + 1, unum + 1], dtype=np.int16)
     du = (umax - umin) / unum
     dv = (vmax - vmin) / vnum
-    def point_up_triangle(iu, iv, offset):
-        top = np.array([umin + iu * du, vmin + iv * dv + offset * (dv / 2)])
-        bottom_left = np.array([
-            umin + (iu - 1) * du,
-            min(vmin + iv * dv + offset * (dv / 2) - (dv / 2), vmin),
-          ])
-        bottom_right = np.array([
-            umin + (iu - 1) * du,
-            max(vmin + iv * dv + offset * (dv / 2) + (dv / 2), vmax)
-          ])
-        centroid = (top + bottom_left + bottom_right) / 3
-        return np.array(top, bottom_left, bottom_right, orient(tuple(centroid)))
+    for iv in range(vnum + 1):
+        for iu in range(unum + 1):
+            vertex = evaluate_point(f1, f2, f3,
+                [umin + iu * du, vmin + iv * dv])
+            try:
+                index = vertices.index(vertex)
+                repeated_vertices[vertex] = index
+            except:
+                index = len(vertices)
+                vertices.append(vertex)
+            vertex_index[iv, iu] = index
 
-    def point_down_triangle(iu, iv, offset):
-        top_right = np.array([
-            umin + iu * du,
-            max(vmin + iv * dv + offset * (dv / 2), vmax)
-          ])
-        top_left = np.array([
-            umin + iu * du,
-            min(vmin + (iv - 1) * dv + offset * (dv / 2), vmin),
-          ])
-        bottom = np.array([
-            umin + (iu - 1) * du,
-            vmin + iv * dv + offset * (dv / 2) - (dv / 2)
-          ])
-        centroid = (top_right + top_left + bottom) / 3
-        return np.array(top_right, top_left, bottom, orient(tuple(centroid)))
-
-    for iu in range(1, unum + 1):
-        if iu % 2:
-            res.append(point_down_triangle(iu, 0, True))
-            res.append(point_up_triangle(iu, 0, True))
-        else:
-            res.append(point_up_triangle(iu, 0, False))
-        for iv in range(1, vnum + 1):
-            if iv != vnum and iv % 2 == 0:
-                res.append(point_up_triangle, iu, iv, iu % 2)
-            res.append(point_down_triangle, iu, iv, iu % 2)
+    faces = []
+    for iv in range(vnum):
+        for iu in range(unum):
+            faces.append([
+                vertex_index[iv    , iu],
+                vertex_index[iv + 1, iu],
+                vertex_index[iv + 1, iu + 1]
+                ])
+            faces.append([
+                vertex_index[iv    , iu],
+                vertex_index[iv    , iu + 1],
+                vertex_index[iv + 1, iu + 1]
+                ])
+    return np.array(vertices), np.array(faces)
 
 def evaluate_point(f1, f2, f3, p):
     u, v = tuple(p)
-    return np.array([f1(u, v), f2(u, v), f3(u, v)])
+    return [f1(u, v), f2(u, v), f3(u, v)]
 
-def triangle_centroid_2d(p1, p2, p3):
-    return (p1 + p2 + p3) / 3
+from stl import mesh
+# saves a mesh given as a set of vertices and faces, where
+# faces are triples of indices in the vertices list
+def save_mesh(vertices, faces, filename):
+    graph = mesh.Mesh(np.zeros(faces.shape[0], dtype=mesh.Mesh.dtype))
+    for i, f in enumerate(faces):
+        for j in range(3):
+            graph.vectors[i][j] = vertices[f[j],:]
+    graph.save(filename)
 
+def create_mesh_from_parametrization(variables, s1, s2, s3,
+                     normal, umin, umax, vmin, vmax,
+                     unum=50, vnum=50, filename="graph.stl"):
+    u, v = symbols(variables)
+    f1 = lambdify((u, v), sympify(s1), np)
+    f2 = lambdify((u, v), sympify(s2), np)
+    f3 = lambdify((u, v), sympify(s3), np)
+    print(f1(1,1))
+    print(f2(1,1))
+    print(f3(1,1))
+    faces, vertices = lambda_to_mesh(f1, f2, f3, umin, umax, vmin, vmax, unum, vnum)
+    save_mesh(faces, vertices, filename)
