@@ -1,7 +1,7 @@
 u v
-(10 + cos(u)) * cos(v)
-(10 + cos(u)) * sin(v)
-sin(u)
+20 * (5 + cos(u)) * cos(v)
+20 * (5 + cos(u)) * sin(v)
+20 * sin(u)
 0
 2 * pi
 0

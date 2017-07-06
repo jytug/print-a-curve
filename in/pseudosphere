@@ -1,0 +1,9 @@
+u v
+40 * (cos(u) * sin(v))
+40 * (sin(u) * sin(v))
+40 * (cos(v) + log(tan(v / 2)))
+0.001
+2 * pi
+0.001
+pi
+pseudosphere.stl

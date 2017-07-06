@@ -13,10 +13,12 @@ umin = N((input("\tmin: ")))
 umax = N((input("\tmax: ")))
 
 print("Type in the boundaries for the second variable")
-vmin = N((input("\tmin: ")))
-vmax = N((input("\tmax: ")))
+vmin = N(input("\tmin: "))
+vmax = N(input("\tmax: "))
+
+width = N(input("Type in the width of the model\n\t"))
 
 filename = input("Type in the file to be saved\n\t")
 
-create_mesh_from_parametrization(variables, s1, s2, s3, None,
-            umin, umax, vmin, vmax, filename=filename)
+create_mesh_from_parametrization(variables, s1, s2, s3,
+            umin, umax, vmin, vmax, width=width, filename=filename)
